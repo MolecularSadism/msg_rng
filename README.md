@@ -2,8 +2,6 @@
 
 Centralized seeded RNG functionality for Bevy games.
 
-**Compatible with Bevy 0.17**
-
 ## Features
 
 - **Seeded RNG**: Set a seed for reproducible gameplay/testing
@@ -69,6 +67,13 @@ fn enemy_ai(mut query: Query<&mut EntityRng>) {
     }
 }
 ```
+
+## Bevy Version Compatibility
+
+| `msg_rng` | Bevy |
+|-----------|------|
+| 0.2       | 0.17 |
+| 0.1       | 0.16 |
 
 ## License
 

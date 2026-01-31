@@ -86,7 +86,7 @@ jobs:
           save-if: false
 
       - name: Check documentation
-        run: cargo doc --locked --no-deps --all-features
+        run: cargo doc --no-deps --all-features
 
   # Run Clippy lints
   clippy:
@@ -110,10 +110,10 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Run Clippy
-        run: cargo clippy --locked --all-targets --all-features
+        run: cargo clippy --all-targets --all-features
 
       - name: Run Clippy (pedantic)
-        run: cargo clippy --locked --all-targets --all-features -- -W clippy::pedantic
+        run: cargo clippy --all-targets --all-features -- -W clippy::pedantic
 
   # Run Bevy lints
   bevy-lint:
@@ -140,7 +140,7 @@ jobs:
         run: cargo install --git https://github.com/TheBevyFlock/bevy_cli --rev 949b808e6bbf11be0f61b236fbbc4e35854698af --locked bevy_lint
 
       - name: Run Bevy lints
-        run: bevy_lint --locked --all-targets --all-features
+        run: bevy_lint --all-targets --all-features
         env:
           RUSTFLAGS: -Zcodegen-backend=cranelift
 
@@ -165,7 +165,7 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Run tests
-        run: cargo test --locked --all-targets --all-features
+        run: cargo test --all-targets --all-features
 
       - name: Run doc tests
-        run: cargo test --locked --doc --all-features
+        run: cargo test --doc --all-features

@@ -188,7 +188,7 @@ impl Default for GlobalRng {
 }
 
 impl GlobalRng {
-    /// Create a new GlobalRng with a random seed.
+    /// Create a new `GlobalRng` with a random seed.
     #[must_use]
     pub fn random() -> Self {
         let seed = rand::random();
@@ -198,7 +198,7 @@ impl GlobalRng {
         }
     }
 
-    /// Create a new GlobalRng with a specific seed.
+    /// Create a new `GlobalRng` with a specific seed.
     #[must_use]
     pub fn seeded(seed: u64) -> Self {
         Self {
@@ -244,7 +244,7 @@ impl GlobalRng {
     #[must_use]
     pub fn fork_stream(&mut self, stream: u32) -> StdRng {
         let base: u64 = self.rng.random();
-        let combined = base.wrapping_add(stream as u64);
+        let combined = base.wrapping_add(u64::from(stream));
         StdRng::seed_from_u64(combined)
     }
 
@@ -328,7 +328,7 @@ impl GlobalRng {
 
     /// Generate a random value of type T.
     ///
-    /// Works with any type where StandardUniform implements Distribution<T>.
+    /// Works with any type where `StandardUniform` implements `Distribution<T>`.
     pub fn random_value<T>(&mut self) -> T
     where
         rand::distr::StandardUniform: rand::distr::Distribution<T>,
@@ -405,7 +405,7 @@ impl Default for EntityRng {
 }
 
 impl EntityRng {
-    /// Create a new EntityRng with a random seed.
+    /// Create a new `EntityRng` with a random seed.
     #[must_use]
     pub fn random() -> Self {
         let seed = rand::random();
@@ -415,7 +415,7 @@ impl EntityRng {
         }
     }
 
-    /// Create a new EntityRng with a specific seed.
+    /// Create a new `EntityRng` with a specific seed.
     #[must_use]
     pub fn seeded(seed: u64) -> Self {
         Self {
@@ -424,7 +424,7 @@ impl EntityRng {
         }
     }
 
-    /// Create an EntityRng derived from the global RNG.
+    /// Create an `EntityRng` derived from the global RNG.
     ///
     /// Note: This consumes randomness from the global RNG.
     #[must_use]
@@ -436,12 +436,12 @@ impl EntityRng {
         }
     }
 
-    /// Create an EntityRng with a deterministic seed based on global seed and entity id.
+    /// Create an `EntityRng` with a deterministic seed based on global seed and entity id.
     ///
     /// This is useful for save/load where you want reproducible entity RNG.
     #[must_use]
     pub fn from_global_and_id(global_seed: u64, entity_index: u32) -> Self {
-        let seed = hash_combine(global_seed, entity_index as u64);
+        let seed = hash_combine(global_seed, u64::from(entity_index));
         Self {
             rng: StdRng::seed_from_u64(seed),
             seed,
@@ -550,7 +550,7 @@ impl RngFork for EntityRng {
     }
 }
 
-/// Convenience type alias for a mutable reference to GlobalRng.
+/// Convenience type alias for a mutable reference to `GlobalRng`.
 pub type GlobalRngMut<'w> = ResMut<'w, GlobalRng>;
 
 /// Prelude module for convenient imports.

@@ -12,17 +12,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated dependency: `bevy = "0.18"`
 - Improved documentation with proper backtick formatting for type names
 - Changed cast operations to use `u64::from()` for better type safety
+- Migrated CI to reusable workflow template
 
 ### Added
 - Comprehensive integration tests covering all public API functionality
 - Tests for plugin initialization, system integration, and entity RNG behavior
 - Tests for RNG forking, stream separation, and state persistence
+- Basic example demonstrating `GlobalRng` and `EntityRng` usage
+- Bevy version compatibility table in README
+- CI, License, Bevy version, and Rust edition badges to README
 
 ### Fixed
 - Fixed clippy pedantic warnings regarding documentation formatting
 - Fixed clippy lossless cast warnings
+- Updated CI configuration for bevy_lint compatibility with Bevy 0.18
 
-## [0.2.0] - 2025-01-30
+## [0.2.0] - 2026-01-20
 
 ### Changed
 - **BREAKING**: Updated to Bevy 0.17.0

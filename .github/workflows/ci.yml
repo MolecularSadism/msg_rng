@@ -13,8 +13,8 @@ concurrency:
 env:
   RUSTFLAGS: -Dwarnings
   RUSTDOCFLAGS: -Dwarnings
-  # Use recent nightly for latest Rust features
-  toolchain: nightly-2026-01-29
+  # Use nightly compatible with bevy_lint (8a601e76)
+  toolchain: nightly-2025-12-15
 
 jobs:
   # Check formatting

@@ -46,15 +46,15 @@ jobs:
 
       - name: Check for no_run attribute
         run: |
-          if grep -r '```no_run' --include="*.rs" .; then
-            echo "Error: Found 'no_run' attribute in documentation"
+          if grep -rE '```[a-z]*[, ]*no_run' --include="*.rs" .; then
+            echo "Error: Found 'no_run' attribute in documentation (e.g., \`\`\`no_run, \`\`\`rust,no_run)"
             exit 1
           fi
 
       - name: Check for ignore attribute
         run: |
-          if grep -r '```ignore' --include="*.rs" .; then
-            echo "Error: Found 'ignore' attribute in documentation"
+          if grep -rE '```[a-z]*[, ]*ignore' --include="*.rs" .; then
+            echo "Error: Found 'ignore' attribute in documentation (e.g., \`\`\`ignore, \`\`\`rust,ignore)"
             exit 1
           fi
 

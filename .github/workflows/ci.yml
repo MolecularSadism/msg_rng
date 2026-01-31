@@ -13,8 +13,8 @@ concurrency:
 env:
   RUSTFLAGS: -Dwarnings
   RUSTDOCFLAGS: -Dwarnings
-  # Use nightly compatible with bevy_lint (8a601e76)
-  toolchain: nightly-2025-12-15
+  # Use nightly compatible with bevy_lint bleeding edge (Bevy 0.18)
+  toolchain: nightly-2026-01-22
 
 jobs:
   # Check formatting
@@ -137,7 +137,7 @@ jobs:
           save-if: false
 
       - name: Install Bevy Lint
-        run: cargo install --git https://github.com/TheBevyFlock/bevy_cli --rev 8a601e76a5cae83133b38a35ab609fd3e1877c84 --locked bevy_lint
+        run: cargo install --git https://github.com/TheBevyFlock/bevy_cli --rev 02112fe3d3de6d1369892ec7a8ea39a1143d2977 --locked bevy_lint
 
       - name: Run Bevy lints
         run: bevy_lint --all-targets --all-features

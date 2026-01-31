@@ -1,6 +1,6 @@
 [package]
 name = "msg_rng"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 authors = ["ffmulks <63452434+ffmulks@users.noreply.github.com>"]
 description = "Centralized seeded RNG functionality for Bevy games"
@@ -10,7 +10,7 @@ keywords = ["bevy", "rng", "random", "gamedev"]
 categories = ["game-development"]
 
 [dependencies]
-bevy = { version = "0.17", default-features = false }
+bevy = { version = "0.18", default-features = false }
 rand = "0.9"
 
 [lints.rust]
@@ -18,6 +18,22 @@ unexpected_cfgs = { level = "warn", check-cfg = [
     "cfg(bevy_lint)",
 ] }
 
+[lints.rustdoc]
+# Forbid ignored code examples and no_run examples
+invalid_codeblock_attributes = "forbid"
+# All doc tests must run
+unescaped_backticks = "forbid"
+
 [lints.clippy]
+# Bevy supplies arguments to systems via dependency injection, so it's natural for systems to
+# request more than 7 arguments, which would undesirably trigger this lint.
 too_many_arguments = "allow"
+# Queries may access many components, which would undesirably trigger this lint.
 type_complexity = "allow"
+# Bevy system parameters are passed by value through dependency injection. The pedantic lint
+# `needless_pass_by_value` is a false positive for Bevy systems, as parameters are never
+# manually passed - Bevy's system parameter framework extracts and provides them automatically.
+needless_pass_by_value = "allow"
+# Enforce documentation quality
+missing_panics_doc = "warn"
+missing_errors_doc = "warn"

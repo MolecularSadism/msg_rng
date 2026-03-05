@@ -11,7 +11,7 @@ categories = ["game-development"]
 
 [dependencies]
 bevy = { version = "0.18", default-features = false }
-rand = "0.9"
+rand = "0.10"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = [

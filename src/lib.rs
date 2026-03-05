@@ -83,7 +83,7 @@
 //! ```
 
 use bevy::prelude::*;
-use rand::{Rng, SeedableRng, rngs::StdRng};
+use rand::{RngExt, SeedableRng, rngs::StdRng};
 
 /// Plugin for adding centralized RNG to a Bevy app.
 ///

@@ -6,7 +6,7 @@
 
 use bevy::prelude::*;
 use msg_rng::prelude::*;
-use rand::Rng;
+use rand::RngExt;
 
 // System functions for integration tests
 fn test_rng_range_system(mut rng: ResMut<GlobalRng>) {

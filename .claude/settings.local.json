@@ -4,7 +4,11 @@
       "Bash(cargo check:*)",
       "Bash(cargo test:*)",
       "Bash(cargo clippy:*)",
-      "Bash(cargo fmt:*)"
+      "Bash(cargo fmt:*)",
+      "WebFetch(domain:docs.rs)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:bevyengine.org)",
+      "WebFetch(domain:bevy.org)"
     ]
   }
 }

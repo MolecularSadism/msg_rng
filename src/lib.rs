@@ -175,8 +175,10 @@ impl Plugin for RngPlugin {
 ///     println!("Saving with seed: {}", seed);
 /// }
 /// ```
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
+#[reflect(Resource, Default)]
 pub struct GlobalRng {
+    #[reflect(ignore)]
     rng: StdRng,
     seed: u64,
 }

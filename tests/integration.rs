@@ -274,3 +274,21 @@ fn global_rng_mut_type_alias_works() {
     app.add_systems(Update, test_type_alias_system);
     app.update();
 }
+
+#[test]
+fn seeded_plugin_is_deterministic_across_apps() {
+    let mut app1 = App::new();
+    app1.add_plugins(RngPlugin::seeded(42));
+
+    let mut app2 = App::new();
+    app2.add_plugins(RngPlugin::seeded(42));
+
+    let val1: u32 = app1.world_mut().resource_mut::<GlobalRng>().range(0..1000);
+    let val2: u32 = app2.world_mut().resource_mut::<GlobalRng>().range(0..1000);
+
+    assert_eq!(val1, val2, "Same seed must produce same first value");
+    assert_eq!(
+        app1.world().resource::<GlobalRng>().seed(),
+        app2.world().resource::<GlobalRng>().seed()
+    );
+}

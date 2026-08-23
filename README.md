@@ -1,5 +1,28 @@
 # msg_rng
 
+> **Deprecated — use [`bevy_rand`](https://crates.io/crates/bevy_rand) +
+> [`bevy_prng`](https://crates.io/crates/bevy_prng) instead.**
+>
+> This crate wraps `rand`'s `StdRng`, which `rand` documents as non-portable: "any
+> future library version may replace the algorithm and results may be
+> platform-dependent". A crate whose purpose is reproducible seeded randomness
+> cannot keep that promise on top of it. Its RNG state is also `#[reflect(ignore)]`d,
+> so a save can restore the seed but never the stream position.
+>
+> `bevy_rand` 0.14 (Bevy 0.18) covers the same ground with algorithms pinned by
+> `bevy_prng`, reflected and serializable state, and fork-by-seed streams:
+>
+> | msg_rng | bevy_rand |
+> |---|---|
+> | `RngPlugin::seeded(seed)` | `EntropyPlugin::<WyRand>::with_seed(seed.to_le_bytes())` |
+> | `RngPlugin::random()` | `EntropyPlugin::<WyRand>::default()` |
+> | `ResMut<GlobalRng>` | `Single<&mut WyRand, With<GlobalRng>>` |
+> | `GlobalRng::seeded(seed)` | `WyRand::seed_from_u64(seed)` |
+> | `EntityRng::from_global(&global)` | `global.fork_seed()` on the spawned entity |
+> | `rng.range(a..b)` / `rng.f32()` / `rng.chance(p)` | `rng.random_range(a..b)` / `rng.random::<f32>()` / `rng.random_bool(p)` |
+>
+> No new work is planned here.
+
 [![CI](https://github.com/MolecularSadism/msg_rng/workflows/CI/badge.svg)](https://github.com/MolecularSadism/msg_rng/actions)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/MolecularSadism/msg_rng#license)
 [![Bevy](https://img.shields.io/badge/Bevy-0.18-blue.svg)](https://bevyengine.org/)

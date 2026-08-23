@@ -16,6 +16,13 @@ bevy = { version = "0.18", default-features = false }
 bevy_math = { version = "0.18", default-features = false, features = ["curve"] }
 rand = "0.10"
 
+[dev-dependencies]
+criterion = "0.7"
+
+[[bench]]
+name = "sampling"
+harness = false
+
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = [
     "cfg(bevy_lint)",

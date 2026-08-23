@@ -350,6 +350,19 @@ mod tests {
         );
     }
 
+    /// Seed 2_996_718 hashes the very first active-list pick
+    /// (`tile_hash_u32(seed, 0, 0, 0xABCD_EF01)` = 4_294_967_218) into the
+    /// top 128 u32 values, the ones a plain f32 division would round up to
+    /// exactly 1.0. Both the unit-mapping clamp and the active-index clamp
+    /// must hold for this seed to generate instead of indexing past the
+    /// active list.
+    #[test]
+    fn top_end_active_pick_hash_does_not_panic() {
+        let config = PoissonDiskConfig::new(2_996_718, 30, 50.0);
+        let points = generate_poisson_disk_circular(&config);
+        assert!(!points.is_empty());
+    }
+
     #[test]
     fn poisson_disk_deterministic() {
         let config = PoissonDiskConfig::new(999, 30, 75.0);

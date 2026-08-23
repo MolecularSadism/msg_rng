@@ -12,6 +12,9 @@
 //! - **Forking**: Create isolated child RNGs that don't affect parent state
 //! - **Stream separation**: Named streams for different game systems
 //! - **Seed retrieval**: Always access the current seed, even when randomly generated
+//! - **Stateless hashing**: [`hash1_u32`]/[`tile_hash_u32`] map `(seed, key, stream)` to stable values
+//! - **Weighted picking**: [`pick_weighted`] and `choose_weighted` on the RNG types
+//! - **Spatial sampling**: [`DiskSample`] offsets and Bridson Poisson disk generation
 //!
 //! # Quick Start
 //!
@@ -85,6 +88,16 @@
 use bevy::prelude::*;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 
+mod disk;
+mod hash;
+mod poisson;
+mod weighted;
+
+pub use disk::DiskSample;
+pub use hash::{hash1_01, hash1_u32, tile_hash_u32, tile_hash01};
+pub use poisson::{PoissonDiskConfig, SpawnPointSet, generate_poisson_disk_circular};
+pub use weighted::{pick_weighted, pick_weighted_index};
+
 /// Plugin for adding centralized RNG to a Bevy app.
 ///
 /// # Examples
@@ -146,7 +159,9 @@ impl Plugin for RngPlugin {
             None => GlobalRng::random(),
         };
 
-        app.insert_resource(global_rng);
+        app.insert_resource(global_rng)
+            .register_type::<PoissonDiskConfig>()
+            .register_type::<SpawnPointSet>();
     }
 }
 
@@ -557,7 +572,11 @@ pub type GlobalRngMut<'w> = ResMut<'w, GlobalRng>;
 
 /// Prelude module for convenient imports.
 pub mod prelude {
-    pub use super::{EntityRng, GlobalRng, GlobalRngMut, RngFork, RngPlugin};
+    pub use super::{
+        DiskSample, EntityRng, GlobalRng, GlobalRngMut, PoissonDiskConfig, RngFork, RngPlugin,
+        SpawnPointSet, generate_poisson_disk_circular, hash1_01, hash1_u32, pick_weighted,
+        pick_weighted_index, tile_hash_u32, tile_hash01,
+    };
 }
 
 #[cfg(test)]

@@ -1,7 +1,8 @@
 //! Weighted random selection.
 //!
 //! Cumulative-weight picking over a slice of `(value, weight)` pairs or a
-//! parallel slice of weights. Negative weights are clamped to zero; a
+//! parallel slice of weights. Negative and non-finite weights (NaN, infinite)
+//! are clamped to zero; a
 //! non-positive total yields `None`. Selection is deterministic given the same
 //! RNG state, and [`GlobalRng`](crate::GlobalRng)/[`EntityRng`](crate::EntityRng)
 //! expose it as `choose_weighted` conveniences.
@@ -11,7 +12,8 @@ use rand::RngExt;
 /// Pick an element from `(value, weight)` pairs with probability proportional
 /// to its weight.
 ///
-/// Negative (and NaN) weights are treated as zero. Returns `None` when
+/// Negative and non-finite (NaN, infinite) weights are treated as zero.
+/// Returns `None` when
 /// `entries` is empty or the clamped weights sum to a non-positive total.
 /// Deterministic given the same RNG state.
 ///
@@ -36,7 +38,8 @@ where
 /// Pick an index from a parallel slice of weights, with probability
 /// proportional to each weight.
 ///
-/// Negative (and NaN) weights are treated as zero. Returns `None` when
+/// Negative and non-finite (NaN, infinite) weights are treated as zero.
+/// Returns `None` when
 /// `weights` is empty or the clamped weights sum to a non-positive total.
 /// Deterministic given the same RNG state.
 ///
@@ -62,8 +65,9 @@ fn pick_index<R>(rng: &mut R, weights: impl Iterator<Item = f32> + Clone) -> Opt
 where
     R: RngExt + ?Sized,
 {
-    // f32::max treats NaN as "the other operand", so NaN weights clamp to 0.
-    let clamped = weights.map(|w| w.max(0.0));
+    // Negatives clamp to 0 via f32::max; non-finite weights (NaN, ±inf) are
+    // zeroed as well so the cumulative walk stays well-defined.
+    let clamped = weights.map(|w| if w.is_finite() { w.max(0.0) } else { 0.0 });
     let total: f32 = clamped.clone().sum();
     if total <= 0.0 {
         return None;
@@ -175,6 +179,19 @@ mod tests {
         for _ in 0..100 {
             assert_eq!(*rng.choose_weighted(&entries).unwrap(), "always");
         }
+    }
+
+    #[test]
+    fn non_finite_weights_are_treated_as_zero() {
+        let mut rng = GlobalRng::seeded(8);
+        let entries = [("real", 1.0), ("inf", f32::INFINITY)];
+        for _ in 0..100 {
+            assert_eq!(*rng.choose_weighted(&entries).unwrap(), "real");
+        }
+        assert!(
+            pick_weighted_index(rng.inner(), &[f32::INFINITY, f32::NEG_INFINITY, f32::NAN])
+                .is_none()
+        );
     }
 
     #[test]

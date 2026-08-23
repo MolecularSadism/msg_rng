@@ -159,7 +159,9 @@ impl Plugin for RngPlugin {
             None => GlobalRng::random(),
         };
 
-        app.insert_resource(global_rng);
+        app.insert_resource(global_rng)
+            .register_type::<PoissonDiskConfig>()
+            .register_type::<SpawnPointSet>();
     }
 }
 

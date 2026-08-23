@@ -1,22 +1,36 @@
 //! Poisson disk sampling utilities for spatial distribution.
 //!
 //! Implements Bridson's algorithm for fast Poisson disk sampling.
-//! Generates evenly-spaced random points with guaranteed minimum spacing.
+//! Generates evenly-spaced random points with a minimum-spacing guarantee
+//! that holds for the continuous sample positions. The returned positions
+//! are rounded to integer tiles: exact duplicates produced by rounding are
+//! removed, but when the derived spacing is below `sqrt(2)` two points may
+//! still land on adjacent tiles closer than the continuous spacing.
 //! Suitable for spawning items, enemies, or other entities with spacing constraints.
 //!
 //! Randomness comes from the stateless [`tile_hash01`] family, so generation
 //! is fully deterministic per seed with no RNG state to thread through.
 
+use std::collections::HashSet;
+
 use bevy::math::IVec2;
+use bevy::reflect::{Reflect, std_traits::ReflectDefault};
 
 use crate::hash::tile_hash01;
 
 /// Configuration for Poisson disk point generation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Reflect)]
+#[reflect(Default, PartialEq)]
 pub struct PoissonDiskConfig {
     /// Random seed for deterministic generation.
     pub seed: u32,
     /// Target number of points to generate.
+    ///
+    /// This is a density hint, not an exact count: it determines the derived
+    /// point spacing, and the result may undershoot it (the disk fills up
+    /// early) or overshoot the internal cap of twice the target by up to one
+    /// candidate batch. Targets denser than one point per tile are silently
+    /// clamped to the circle's area in tiles.
     pub target_count: u32,
     /// Maximum radius from origin (circular boundary).
     pub radius: f32,
@@ -54,7 +68,12 @@ impl PoissonDiskConfig {
 /// 5. Accept candidates that are far enough from all neighbors
 /// 6. Repeat until active list is empty
 ///
-/// Returns integer positions suitable for tile-based placement.
+/// Returns integer positions suitable for tile-based placement. The number
+/// of points is approximate: see [`PoissonDiskConfig::target_count`] for the
+/// undershoot/overshoot and density-clamp rules. The minimum-spacing
+/// guarantee holds for the continuous sample positions; rounding to tiles
+/// removes exact duplicates, but below a derived spacing of `sqrt(2)` two
+/// points may end up on adjacent tiles.
 #[must_use]
 pub fn generate_poisson_disk_circular(config: &PoissonDiskConfig) -> Vec<IVec2> {
     if config.target_count == 0 || config.radius <= 0.0 {
@@ -121,7 +140,7 @@ pub fn generate_poisson_disk_circular(config: &PoissonDiskConfig) -> Vec<IVec2> 
     while !active.is_empty() && points.len() < config.target_count as usize * 2 {
         // Pick a random active point
         let active_idx_hash = tile_hash01(config.seed, iteration as i32, 0, 0xABCD_EF01);
-        let active_idx = (active_idx_hash * active.len() as f32) as usize;
+        let active_idx = ((active_idx_hash * active.len() as f32) as usize).min(active.len() - 1);
         let point_idx = active[active_idx];
         let (px, py) = points[point_idx];
 
@@ -188,15 +207,21 @@ pub fn generate_poisson_disk_circular(config: &PoissonDiskConfig) -> Vec<IVec2> 
         }
     }
 
-    // Convert to integer positions
+    // Convert to integer positions, dropping the exact duplicates rounding
+    // can introduce when min_distance is below sqrt(2). Order is preserved.
+    let mut seen = HashSet::with_capacity(points.len());
     points
         .into_iter()
         .map(|(x, y)| IVec2::new(x.round() as i32, y.round() as i32))
+        .filter(|p| seen.insert(*p))
         .collect()
 }
 
-/// A set of pre-generated spawn points for efficient lookup.
-#[derive(Debug, Clone, Default)]
+/// A set of pre-generated spawn points, queryable by region.
+///
+/// Region queries are a linear scan over the stored points.
+#[derive(Debug, Clone, Default, PartialEq, Reflect)]
+#[reflect(Default, PartialEq)]
 pub struct SpawnPointSet {
     points: Vec<IVec2>,
 }
@@ -213,6 +238,17 @@ impl SpawnPointSet {
     pub fn from_poisson_disk(config: &PoissonDiskConfig) -> Self {
         let points = generate_poisson_disk_circular(config);
         Self::new(points)
+    }
+
+    /// All spawn points in the set.
+    #[must_use]
+    pub fn points(&self) -> &[IVec2] {
+        &self.points
+    }
+
+    /// Iterate over all spawn points.
+    pub fn iter(&self) -> impl Iterator<Item = IVec2> + '_ {
+        self.points.iter().copied()
     }
 
     /// Get all spawn points within a rectangular region.
@@ -299,6 +335,22 @@ mod tests {
     }
 
     #[test]
+    fn dense_config_emits_distinct_tile_positions() {
+        // Dense enough that min_distance clamps to 1 tile, where rounding
+        // would otherwise collapse nearby samples onto the same tile.
+        let config = PoissonDiskConfig::new(7, 500, 10.0);
+        let points = generate_poisson_disk_circular(&config);
+        assert!(!points.is_empty());
+
+        let unique: std::collections::HashSet<_> = points.iter().copied().collect();
+        assert_eq!(
+            unique.len(),
+            points.len(),
+            "duplicate tile positions emitted"
+        );
+    }
+
+    #[test]
     fn poisson_disk_deterministic() {
         let config = PoissonDiskConfig::new(999, 30, 75.0);
         let points1 = generate_poisson_disk_circular(&config);
@@ -340,6 +392,16 @@ mod tests {
         assert!(in_rect.contains(&IVec2::new(0, 0)));
         assert!(in_rect.contains(&IVec2::new(5, 5)));
         assert!(in_rect.contains(&IVec2::new(10, 10)));
+    }
+
+    #[test]
+    fn spawn_point_set_exposes_all_points() {
+        let points = vec![IVec2::new(1, 2), IVec2::new(-3, 4)];
+        let set = SpawnPointSet::new(points.clone());
+
+        assert_eq!(set.points(), points.as_slice());
+        let iterated: Vec<IVec2> = set.iter().collect();
+        assert_eq!(iterated, points);
     }
 
     #[test]

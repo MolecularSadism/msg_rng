@@ -10,6 +10,32 @@
 //! The outputs of this family are stable across versions: generated worlds
 //! depend on the exact values, so the mixing constants and structure must not
 //! change.
+//!
+//! # Bridging from `u64` seeds
+//!
+//! The crate's stateful RNGs ([`GlobalRng`](crate::GlobalRng),
+//! [`EntityRng`](crate::EntityRng)) use `u64` seeds while this family takes
+//! `u32`. The recommended bridge folds the high half into the low half so
+//! both contribute entropy:
+//!
+//! ```rust
+//! let world_seed: u64 = 0xDEAD_BEEF_1234_5678;
+//! let hash_seed = (world_seed ^ (world_seed >> 32)) as u32;
+//! let roll = msg_rng::tile_hash01(hash_seed, 10, -4, 0);
+//! assert!((0.0..1.0).contains(&roll));
+//! ```
+
+/// Largest `f32` strictly below 1.0.
+const MAX_BELOW_ONE: f32 = 1.0 - f32::EPSILON / 2.0;
+
+/// Map a hash output onto [0,1).
+///
+/// Divides by 2^32 and clamps the handful of top-end `u32` values whose
+/// quotient would otherwise round up to exactly 1.0.
+#[inline]
+fn unit_from_hash(h: u32) -> f32 {
+    ((h as f32) / 4_294_967_296.0).min(MAX_BELOW_ONE)
+}
 
 #[inline]
 fn fmix32(mut z: u32) -> u32 {
@@ -42,18 +68,22 @@ pub fn tile_hash_u32(seed: u32, x: i32, y: i32, stream: u32) -> u32 {
     fmix32(z)
 }
 
-/// 2D stateless hash mapped to [0,1).
+/// 2D stateless hash mapped to [0,1). The upper bound is exclusive: the few
+/// `u32` hash values whose `f32` quotient would round up to 1.0 clamp to the
+/// largest `f32` below it.
 #[inline]
 #[must_use]
 pub fn tile_hash01(seed: u32, x: i32, y: i32, stream: u32) -> f32 {
-    (tile_hash_u32(seed, x, y, stream) as f32) / 4_294_967_296.0 // 2^32
+    unit_from_hash(tile_hash_u32(seed, x, y, stream))
 }
 
-/// 1D stateless hash mapped to [0,1).
+/// 1D stateless hash mapped to [0,1). The upper bound is exclusive: the few
+/// `u32` hash values whose `f32` quotient would round up to 1.0 clamp to the
+/// largest `f32` below it.
 #[inline]
 #[must_use]
 pub fn hash1_01(seed: u32, key: u32, stream: u32) -> f32 {
-    (hash1_u32(seed, key, stream) as f32) / 4_294_967_296.0
+    unit_from_hash(hash1_u32(seed, key, stream))
 }
 
 #[cfg(test)]
@@ -115,5 +145,20 @@ mod tests {
             let v = hash1_01(9, i as u32, 3);
             assert!((0.0..1.0).contains(&v), "hash1_01 out of range: {v}");
         }
+    }
+
+    /// The 128 largest u32 hash values would round up to exactly 1.0 when
+    /// divided as f32; the mapping must clamp them below 1.0 while leaving
+    /// every other value bit-identical to the plain division.
+    #[test]
+    fn unit_from_hash_stays_below_one() {
+        assert!(unit_from_hash(u32::MAX) < 1.0);
+        assert_eq!(unit_from_hash(u32::MAX), MAX_BELOW_ONE);
+        assert_eq!(unit_from_hash(4_294_967_168), MAX_BELOW_ONE);
+        assert_eq!(
+            unit_from_hash(2_147_483_648),
+            2_147_483_648u32 as f32 / 4_294_967_296.0
+        );
+        assert_eq!(unit_from_hash(0), 0.0);
     }
 }

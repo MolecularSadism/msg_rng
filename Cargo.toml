@@ -11,6 +11,9 @@ categories = ["game-development"]
 
 [dependencies]
 bevy = { version = "0.18", default-features = false }
+# Direct dependency to enable the `curve` feature (EaseFunction), which the
+# top-level `bevy` crate exposes no passthrough for.
+bevy_math = { version = "0.18", default-features = false, features = ["curve"] }
 rand = "0.10"
 
 [lints.rust]
